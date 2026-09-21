@@ -4,8 +4,7 @@ import json
 
 
 api_key = os.getenv("LLM_API_KEY")
-
-url = "https://api.00033333.xyz/v1/chat/completions"
+url = os.getenv("LLM_API_URL")
 
 headers = {
     "Authorization": f"Bearer {api_key}",

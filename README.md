@@ -1,5 +1,15 @@
 # Agent Tool Calling Project
 
+## 项目简介
+
+基于 Python + FastAPI 实现的最小 Tool Calling Agent 项目：
+
+- **智能工具调用**：LLM 根据用户问题决定是否调用工具。
+- **Tool Registry（工具注册表）**：根据工具名动态调用 Python 工具。
+- **多轮决策循环**：把 Tool Result（工具结果）回填给模型继续决策，直到返回最终答案。
+- **场景覆盖**：已覆盖 No Tool、Single Tool、Multi Tool、Conditional Tool 场景。
+- **双重验证**：使用 Evaluation（评测）和 HTTP Smoke Test（冒烟测试）验证。
+
 ## Quickstart
 
 ### 1. 创建虚拟环境
@@ -20,18 +30,18 @@ py -3.13 -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-### 4. 设置 API Key
+### 4. 设置环境变量
 
-项目需要环境变量：
+项目需要配置以下环境变量：
 
-```text
-LLM_API_KEY
-```
+- `LLM_API_KEY`：API 密钥
+- `LLM_API_URL`：OpenAI-compatible LLM API 请求地址
 
 PowerShell 中设置：
 
 ```powershell
 $env:LLM_API_KEY="你的API密钥"
+$env:LLM_API_URL="你的API地址"
 ```
 
 不要把真实 API Key 写入项目文件或提交到 GitHub。
