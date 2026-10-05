@@ -30,7 +30,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_product_stock",
-            "description": "根据商品编号查询商品库存数量，如果商品不存在，返回没有找到。",
+            "description": "根据商品编号查询商品库存数量和库存状态；商品不存在时返回没有找到。",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -84,8 +84,16 @@ def get_order_status(order_id):
 def get_product_stock(product_id):
     for product in product_stocks:
         if product[0] == product_id:
-            return product[1]
-
+            if product[1] == 0:
+                stock_status = "out_of_stock"
+            elif 1 <= product[1] <= 5:
+                stock_status = "low_stock"
+            else :
+                stock_status =  "in_stock"
+            return {
+                "stock": product[1],
+                "stock_status": stock_status
+            }
     return "没有找到"
 
 
@@ -137,29 +145,6 @@ def run_agent(question):
         step_count += 1
 
         print("step_count:", step_count)
-
-        tool_call = tool_calls[0]
-
-
-        tool_call_id = tool_call["id"]
-
-
-        tool_name = tool_call["function"]["name"]
-
-
-        arguments = json.loads(
-            tool_call["function"]["arguments"]
-        )
-
-        tool_function = tool_registry[tool_name]
-
-
-        tool_result = tool_function(**arguments)
-
-        print("tool_name:", tool_name)
-        print("tool_function:", tool_function)
-        print("tool_result:", tool_result)
-
         assistant_message = {
             "role": "assistant",
             "content": None,
@@ -167,14 +152,30 @@ def run_agent(question):
         }
 
         messages.append(assistant_message)
+        for tool_call in tool_calls:
+            tool_call_id = tool_call["id"]
 
-        tool_message = {
-            "role": "tool",
-            "tool_call_id": tool_call_id,
-            "content": str(tool_result)
-        }
+            tool_name = tool_call["function"]["name"]
 
-        messages.append(tool_message)
+            arguments = json.loads(
+                tool_call["function"]["arguments"]
+            )
+
+            tool_function = tool_registry[tool_name]
+
+            tool_result = tool_function(**arguments)
+
+            print("tool_name:", tool_name)
+            print("tool_function:", tool_function)
+            print("tool_result:", tool_result)
+
+            tool_message = {
+                "role": "tool",
+                "tool_call_id": tool_call_id,
+                "content": str(tool_result)
+            }
+
+            messages.append(tool_message)
 
         data = {
             "model": "gemini-3.8-flash-high",
@@ -192,3 +193,4 @@ def run_agent(question):
         result = response.json()
 
         tool_calls = result["choices"][0]["message"].get("tool_calls")
+

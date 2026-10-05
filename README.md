@@ -2,13 +2,15 @@
 
 ## 项目简介
 
-基于 Python + FastAPI 实现的最小 Tool Calling Agent 项目：
+基于 Python + FastAPI 实现的最小 Tool Calling Agent（工具调用智能体）项目：
 
-- **智能工具调用**：LLM 根据用户问题决定是否调用工具。
-- **Tool Registry（工具注册表）**：根据工具名动态调用 Python 工具。
-- **多轮决策循环**：把 Tool Result（工具结果）回填给模型继续决策，直到返回最终答案。
-- **场景覆盖**：已覆盖 No Tool、Single Tool、Multi Tool、Conditional Tool 场景。
-- **双重验证**：使用 Evaluation（评测）和 HTTP Smoke Test（冒烟测试）验证。
+- **智能工具调用（LLM Tool Calling）**：LLM 根据用户问题自主决定是否调用工具，支持无需调用工具的直接回答（No Tool 分支）。
+- **工具注册与动态分发（Tool Registry + Dynamic Dispatch）**：统一维护本地工具映射，根据模型返回的函数名动态调用对应的 Python 工具。
+- **最小智能体循环（Minimal Agent Loop）**：维护对话历史，按标准消息协议回填助手消息与工具结果，持续迭代直至任务完成。
+- **单/多工具调用支持（Single & Multi Tool Calling）**：支持单工具调用与同轮多工具调用。Agent supports executing multiple tool calls returned in the same model turn and feeds each result back using the corresponding tool_call_id（支持在同一模型轮次中逐个执行返回的多个工具调用，并使用对应的 `tool_call_id` 将各工具结果独立封装并回填）。
+- **结构化工具返回**：商品库存工具 `get_product_stock` 支持返回结构化字典，包含库存数量（`stock`）与库存状态（`stock_status`：`out_of_stock` / `low_stock` / `in_stock`）。
+- **Web API 服务**：基于 FastAPI 提供 HTTP 接口（包含 `/health` 与 `/ask`）。
+- **评测与回归（Evaluation / Regression）**：结合自动化用例评测（`eval_agent.py`）与 HTTP Smoke Test（冒烟测试）双重验证。
 
 ## Quickstart
 
