@@ -106,14 +106,14 @@ tool_registry = {
 max_steps = 5
 
 
-def run_agent(question):
+def run_agent(question, model="gemini-3.8-flash-high"):
 
     messages = chuan(question)
 
     step_count = 0
 
     data = {
-        "model": "gemini-3.8-flash-high",
+        "model": model,
         "messages": messages,
         "tools": tools,
         "tool_choice": "auto"
@@ -178,7 +178,7 @@ def run_agent(question):
             messages.append(tool_message)
 
         data = {
-            "model": "gemini-3.8-flash-high",
+            "model": model,
             "messages": messages,
             "tools": tools,
             "tool_choice": "auto"

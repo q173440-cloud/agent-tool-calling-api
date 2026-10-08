@@ -9,7 +9,7 @@
 - **最小智能体循环（Minimal Agent Loop）**：维护对话历史，按标准消息协议回填助手消息与工具结果，持续迭代直至任务完成。
 - **单/多工具调用支持（Single & Multi Tool Calling）**：支持单工具调用与同轮多工具调用。Agent supports executing multiple tool calls returned in the same model turn and feeds each result back using the corresponding tool_call_id（支持在同一模型轮次中逐个执行返回的多个工具调用，并使用对应的 `tool_call_id` 将各工具结果独立封装并回填）。
 - **结构化工具返回**：商品库存工具 `get_product_stock` 支持返回结构化字典，包含库存数量（`stock`）与库存状态（`stock_status`：`out_of_stock` / `low_stock` / `in_stock`）。
-- **Web API 服务**：基于 FastAPI 提供 HTTP 接口（包含 `/health` 与 `/ask`）。
+- **Web API 服务与输入校验**：基于 FastAPI 提供 HTTP 接口（包含 `/health` 与 `/ask`）。`/ask` 接口自动去除 `question` 首尾空格；空问题（包括全空格输入）在进入 Agent 前直接拒绝并返回提示；`model` 为可选参数，不传时使用默认模型，原有仅传 `question` 的请求格式保持兼容；正常问题继续保持原有 Agent / Tool Calling 流程。
 - **评测与回归（Evaluation / Regression）**：结合自动化用例评测（`eval_agent.py`）与 HTTP Smoke Test（冒烟测试）双重验证。
 
 ## Quickstart
