@@ -119,11 +119,17 @@ def run_agent(question, model="gemini-3.8-flash-high"):
         "tool_choice": "auto"
     }
 
-    response = requests.post(
-        url,
-        headers=headers,
-        json=data
-    )
+
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            json=data,
+            timeout=10
+        )
+    except requests.exceptions.Timeout:
+        return "模型服务响应超时，请稍后重试"
+
 
 
     result = response.json()
@@ -184,11 +190,15 @@ def run_agent(question, model="gemini-3.8-flash-high"):
             "tool_choice": "auto"
         }
 
-        response = requests.post(
-            url,
-            headers=headers,
-            json=data
-        )
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json=data,
+                timeout=10
+            )
+        except requests.exceptions.Timeout:
+            return "模型服务响应超时，请稍后重试"
 
         result = response.json()
 
