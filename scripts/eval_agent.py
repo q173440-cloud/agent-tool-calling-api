@@ -1,3 +1,11 @@
+import os
+import sys
+
+# 确保无论从项目根目录还是其他目录执行，均能正确导入根目录下的 agent 模块
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 from agent import run_agent
 
 cases = [

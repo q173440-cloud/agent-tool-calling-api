@@ -14,6 +14,28 @@
 - **HTTP 超时保护（Timeout Handling）**：在首轮模型请求与后续 Agent Loop 工具调用请求中统一配置超时保护（`timeout=10`）与异常降级，保障服务可用性。
 - **订单数据 SQLite 持久化（SQLite Persistence）**：订单查询工具 `get_order_status` 已迁移至本地 SQLite 数据库（`orders.db`），解耦内存列表硬编码，数据独立持久化。
 
+## 项目结构
+
+```text
+.
+├── agent.py              # Agent 核心逻辑、工具定义与工具注册
+├── main.py               # FastAPI Web 服务入口
+├── scripts/              # 数据库初始化、数据填充与评测辅助脚本
+│   ├── __init__.py
+│   ├── init_db.py        # 创建 SQLite 数据库及 orders 表
+│   ├── seed_orders.py    # 幂等插入订单种子数据
+│   ├── verify_orders.py  # 验证数据库订单持久化状态
+│   ├── eval_agent.py     # Agent 多场景评估用例
+│   └── smoke_api.py      # HTTP API 冒烟测试脚本
+├── tests/                # 单元测试与离线回归测试套件
+│   ├── __init__.py
+│   └── test_agent.py
+├── .env.example          # 环境变量示例
+├── .gitignore
+├── README.md
+└── requirements.txt
+```
+
 ## Quickstart
 
 ### 1. 创建虚拟环境
@@ -52,17 +74,17 @@ $env:LLM_API_URL="你的API地址"
 
 ### 5. 初始化 SQLite 数据库与订单数据
 
-项目使用 SQLite 存储订单数据。新克隆项目后运行测试或启动服务前，需初始化数据库并录入种子数据：
+项目使用 SQLite 存储订单数据。新克隆项目后运行测试或启动服务前，需初始化数据库并录入种子数据（推荐使用 `python -m scripts.脚本名` 模块方式运行）：
 
 ```powershell
 # 1. 创建 orders.db 数据库及 orders 数据表
-python .\init_db.py
+python -m scripts.init_db
 
 # 2. 插入初始订单测试数据（支持重复执行幂等更新）
-python .\seed_orders.py
+python -m scripts.seed_orders
 
 # 3. （可选）检查数据库订单数据持久化状态
-python .\verify_orders.py
+python -m scripts.verify_orders
 ```
 
 ### 6. 运行单元与回归测试（Mock，无需真实 API Key）
@@ -82,7 +104,7 @@ python -m unittest discover -s tests
 ### 7. 运行 Agent Evaluation
 
 ```powershell
-python .\eval_agent.py
+python -m scripts.eval_agent
 ```
 
 当前 Evaluation 包含：
@@ -117,7 +139,7 @@ http://127.0.0.1:8000
 然后运行：
 
 ```powershell
-python .\smoke_api.py
+python -m scripts.smoke_api
 ```
 
 Smoke Test 会验证：
