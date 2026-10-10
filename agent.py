@@ -1,6 +1,10 @@
 import os
 import requests
 import json
+import sqlite3
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "orders.db")
+
 
 
 api_key = os.getenv("LLM_API_KEY")
@@ -74,12 +78,20 @@ def chuan(question):
 
 
 def get_order_status(order_id):
-    for order in orders:
-        if order[0] == order_id:
-            return order[1]
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        cursor = conn.execute(
+            "SELECT status FROM orders WHERE order_id = ?",
+            (order_id,)
+        )
+        result = cursor.fetchone()
+    finally:
+        conn.close()
 
-    return "不存在编号"
-
+    if result:
+        return result[0]
+    else:
+        return "不存在编号"
 
 def get_product_stock(product_id):
     for product in product_stocks:

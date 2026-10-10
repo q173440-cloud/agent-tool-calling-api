@@ -12,6 +12,7 @@
 - **Web API 服务与输入校验**：基于 FastAPI 提供 HTTP 接口（包含 `/health` 与 `/ask`）。`/ask` 接口自动去除 `question` 首尾空格；空问题（包括全空格输入）在进入 Agent 前直接拒绝并返回提示；`model` 为可选参数，不传时使用默认模型，原有仅传 `question` 的请求格式保持兼容；正常问题继续保持原有 Agent / Tool Calling 流程。
 - **评测与回归（Evaluation / Regression）**：结合自动化用例评测（`eval_agent.py`）与 HTTP Smoke Test（冒烟测试）双重验证。
 - **HTTP 超时保护（Timeout Handling）**：在首轮模型请求与后续 Agent Loop 工具调用请求中统一配置超时保护（`timeout=10`）与异常降级，保障服务可用性。
+- **订单数据 SQLite 持久化（SQLite Persistence）**：订单查询工具 `get_order_status` 已迁移至本地 SQLite 数据库（`orders.db`），解耦内存列表硬编码，数据独立持久化。
 
 ## Quickstart
 
@@ -49,7 +50,22 @@ $env:LLM_API_URL="你的API地址"
 
 不要把真实 API Key 写入项目文件或提交到 GitHub。
 
-### 5. 运行单元与回归测试（Mock，无需真实 API Key）
+### 5. 初始化 SQLite 数据库与订单数据
+
+项目使用 SQLite 存储订单数据。新克隆项目后运行测试或启动服务前，需初始化数据库并录入种子数据：
+
+```powershell
+# 1. 创建 orders.db 数据库及 orders 数据表
+python .\init_db.py
+
+# 2. 插入初始订单测试数据（支持重复执行幂等更新）
+python .\seed_orders.py
+
+# 3. （可选）检查数据库订单数据持久化状态
+python .\verify_orders.py
+```
+
+### 6. 运行单元与回归测试（Mock，无需真实 API Key）
 
 项目内置基于 `unittest` 与 `unittest.mock` 的单测套件，可直接离线运行验证超时与核心行为：
 
@@ -61,9 +77,9 @@ python -m unittest discover -s tests
 - 场景 1：首次 LLM 请求超时捕获与降级
 - 场景 2：Tool Calling 后续轮次请求超时捕获与降级
 - 场景 3：正常无工具请求回归验证
-- 场景 4：正常 Tool Calling 工具执行与回填回归验证
+- 场景 4：正常 Tool Calling 工具执行与回填回归验证（验证 SQLite 订单状态查询）
 
-### 6. 运行 Agent Evaluation
+### 7. 运行 Agent Evaluation
 
 ```powershell
 python .\eval_agent.py
@@ -76,7 +92,7 @@ python .\eval_agent.py
 - Multi Tool
 - Conditional Tool
 
-### 7. 启动 FastAPI 服务
+### 8. 启动 FastAPI 服务
 
 ```powershell
 python -m uvicorn main:app --reload
@@ -90,7 +106,7 @@ http://127.0.0.1:8000
 
 保持这个终端运行。
 
-### 8. 运行 HTTP Smoke Test
+### 9. 运行 HTTP Smoke Test
 
 打开另一个 PowerShell，进入项目目录并激活虚拟环境：
 
