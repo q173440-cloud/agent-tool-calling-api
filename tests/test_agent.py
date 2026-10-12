@@ -1,4 +1,5 @@
 import unittest
+import json
 from unittest.mock import Mock, patch
 from requests.exceptions import Timeout
 from agent import run_agent
@@ -173,6 +174,99 @@ class TestAgentTimeoutAndRegression(unittest.TestCase):
             ]
             self.assertEqual(len(tool_messages), 1)
             self.assertEqual(tool_messages[0]["content"], "处理中")
+
+    def test_unknown_tool(self):
+        """
+        场景 5: 未知工具异常处理测试
+        - 模拟模型返回未在 registry 中注册的工具 (如 get_user_balance)
+        - 验证捕获 KeyError 并返回友好提示
+        - 验证仅请求模型一次即中断
+        """
+        fake_response = Mock()
+        fake_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": None,
+                        "tool_calls": [
+                            {
+                                "id": "call_unknown_001",
+                                "type": "function",
+                                "function": {
+                                    "name": "get_user_balance",
+                                    "arguments": "{}"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+
+        # 替代真实 HTTP 请求
+        with patch(
+            "agent.requests.post",
+            return_value=fake_response
+        ) as mock_post:
+            result = run_agent("查询我的余额")
+
+            # 检查返回内容
+            self.assertEqual(result, "未知工具：get_user_balance")
+
+            # 检查是否只请求模型一次
+            self.assertEqual(mock_post.call_count, 1)
+
+    def test_stock_tool_json_content(self):
+        """
+        场景 6: 工具结果 JSON 序列化测试
+        - 模拟模型调用库存工具 get_product_stock (P003)
+        - 验证字典返回值被序列化为合法的 JSON 字符串回填
+        - 验证 tool message content 可被正确反序列化并包含预期库存数据
+        """
+        first = Mock()
+        first.json.return_value = {
+            "choices": [{
+                "message": {
+                    "content": None,
+                    "tool_calls": [{
+                        "id": "call_001",
+                        "type": "function",
+                        "function": {
+                            "name": "get_product_stock",
+                            "arguments": '{"product_id":"P003"}'
+                        }
+                    }]
+                }
+            }]
+        }
+
+        last = Mock()
+        last.json.return_value = {
+            "choices": [{
+                "message": {
+                    "content": "完成",
+                    "tool_calls": None
+                }
+            }]
+        }
+
+        with patch("agent.requests.post", side_effect=[first, last]) as mock_post:
+            run_agent("查询 P003 库存")
+
+            messages = mock_post.call_args_list[1].kwargs["json"]["messages"]
+            content = next(
+                m["content"] for m in messages
+                if m["role"] == "tool"
+            )
+
+            self.assertEqual(
+                json.loads(content),
+                {
+                    "stock": 5,
+                    "stock_status": "low_stock"
+                }
+            )
 
 
 if __name__ == "__main__":

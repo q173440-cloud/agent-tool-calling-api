@@ -12,6 +12,8 @@
 - **Web API 服务与输入校验**：基于 FastAPI 提供 HTTP 接口（包含 `/health` 与 `/ask`）。`/ask` 接口自动去除 `question` 首尾空格；空问题（包括全空格输入）在进入 Agent 前直接拒绝并返回提示；`model` 为可选参数，不传时使用默认模型，原有仅传 `question` 的请求格式保持兼容；正常问题继续保持原有 Agent / Tool Calling 流程。
 - **评测与回归（Evaluation / Regression）**：结合自动化用例评测（`eval_agent.py`）与 HTTP Smoke Test（冒烟测试）双重验证。
 - **HTTP 超时保护（Timeout Handling）**：在首轮模型请求与后续 Agent Loop 工具调用请求中统一配置超时保护（`timeout=10`）与异常降级，保障服务可用性。
+- **未知工具异常处理（Unknown Tool Handling）**：当模型返回未在 Registry 注册的工具名时，安全捕获 `KeyError` 并返回友好提示信息，防止智能体因异常调用而崩溃中断。
+- **工具结果 JSON 序列化（Tool Result Serialization）**：回填模型消息前对字典等结构化返回结果自动执行 `json.dumps()` 序列化为规范 JSON 字符串，普通字符串保持原样，保障消息协议规范与解析稳定性。
 - **订单数据 SQLite 持久化（SQLite Persistence）**：订单查询工具 `get_order_status` 已迁移至本地 SQLite 数据库（`orders.db`），解耦内存列表硬编码，数据独立持久化。
 
 ## 项目结构
@@ -100,6 +102,8 @@ python -m unittest discover -s tests
 - 场景 2：Tool Calling 后续轮次请求超时捕获与降级
 - 场景 3：正常无工具请求回归验证
 - 场景 4：正常 Tool Calling 工具执行与回填回归验证（验证 SQLite 订单状态查询）
+- 场景 5：未知工具调用异常处理测试（验证未注册工具防御与友好提示）
+- 场景 6：字典工具结果 JSON 序列化验证（验证商品库存结构化字典序列化回填）
 
 ### 7. 运行 Agent Evaluation
 

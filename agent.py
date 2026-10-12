@@ -178,19 +178,25 @@ def run_agent(question, model="gemini-3.8-flash-high"):
             arguments = json.loads(
                 tool_call["function"]["arguments"]
             )
-
-            tool_function = tool_registry[tool_name]
+            try:
+                tool_function = tool_registry[tool_name]
+            except KeyError:
+                return f"未知工具：{tool_name}"
 
             tool_result = tool_function(**arguments)
 
+            if isinstance(tool_result, dict):
+                content = json.dumps(tool_result)
+            else:
+                content = tool_result
             print("tool_name:", tool_name)
             print("tool_function:", tool_function)
-            print("tool_result:", tool_result)
+            print("tool_result:", content)
 
             tool_message = {
                 "role": "tool",
                 "tool_call_id": tool_call_id,
-                "content": str(tool_result)
+                "content": content
             }
 
             messages.append(tool_message)
