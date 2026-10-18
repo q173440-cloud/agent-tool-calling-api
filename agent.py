@@ -16,19 +16,6 @@ headers = {
 }
 
 
-orders = [
-    ["A1001", "已发货"],
-    ["A1002", "处理中"],
-    ["A1003", "已完成"]
-]
-
-product_stocks = [
-    ["P001", 12],
-    ["P002", 0],
-    ["P003", 5]
-]
-
-
 tools = [
     {
         "type": "function",
@@ -94,18 +81,26 @@ def get_order_status(order_id):
         return "不存在编号"
 
 def get_product_stock(product_id):
-    for product in product_stocks:
-        if product[0] == product_id:
-            if product[1] == 0:
-                stock_status = "out_of_stock"
-            elif 1 <= product[1] <= 5:
-                stock_status = "low_stock"
-            else :
-                stock_status =  "in_stock"
-            return {
-                "stock": product[1],
-                "stock_status": stock_status
-            }
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        cursor = conn.execute(
+            "SELECT stock FROM product_stocks WHERE product_stocks_id = ?",
+            (product_id,)
+        )
+        result = cursor.fetchone()
+    finally:
+        conn.close()
+    if result is not None:
+        if result[0] == 0:
+            stock_status = "out_of_stock"
+        elif 1 <= result[0] <= 5:
+            stock_status = "low_stock"
+        else :
+            stock_status =  "in_stock"
+        return {
+            "stock": result[0],
+            "stock_status": stock_status
+        }
     return "没有找到"
 
 

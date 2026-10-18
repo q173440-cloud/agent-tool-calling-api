@@ -14,7 +14,7 @@
 - **HTTP 超时保护（Timeout Handling）**：在首轮模型请求与后续 Agent Loop 工具调用请求中统一配置超时保护（`timeout=10`）与异常降级，保障服务可用性。
 - **未知工具异常处理（Unknown Tool Handling）**：当模型返回未在 Registry 注册的工具名时，安全捕获 `KeyError` 并返回友好提示信息，防止智能体因异常调用而崩溃中断。
 - **工具结果 JSON 序列化（Tool Result Serialization）**：回填模型消息前对字典等结构化返回结果自动执行 `json.dumps()` 序列化为规范 JSON 字符串，普通字符串保持原样，保障消息协议规范与解析稳定性。
-- **订单数据 SQLite 持久化（SQLite Persistence）**：订单查询工具 `get_order_status` 已迁移至本地 SQLite 数据库（`orders.db`），解耦内存列表硬编码，数据独立持久化。
+- **数据 SQLite 持久化（SQLite Persistence）**：订单查询工具 `get_order_status` 与商品库存查询工具 `get_product_stock` 均已迁移至本地 SQLite 数据库，共用单个 `orders.db` 文件（包含 `orders` 与 `product_stocks` 数据表），解耦内存列表硬编码，数据独立持久化。`sqlite3` 属于 Python 标准库，无需引入额外依赖。
 
 ## 项目结构
 
@@ -26,6 +26,8 @@
 │   ├── __init__.py
 │   ├── init_db.py        # 创建 SQLite 数据库及 orders 表
 │   ├── seed_orders.py    # 幂等插入订单种子数据
+│   ├── init_product_stocks.py  # 创建 product_stocks 商品库存表
+│   ├── seed_product_stocks.py  # 幂等插入商品库存种子数据
 │   ├── verify_orders.py  # 验证数据库订单持久化状态
 │   ├── eval_agent.py     # Agent 多场景评估用例
 │   └── smoke_api.py      # HTTP API 冒烟测试脚本
@@ -74,9 +76,11 @@ $env:LLM_API_URL="你的API地址"
 
 不要把真实 API Key 写入项目文件或提交到 GitHub。
 
-### 5. 初始化 SQLite 数据库与订单数据
+### 5. 初始化 SQLite 数据库与种子数据
 
-项目使用 SQLite 存储订单数据。新克隆项目后运行测试或启动服务前，需初始化数据库并录入种子数据（推荐使用 `python -m scripts.脚本名` 模块方式运行）：
+项目使用本地单个 SQLite 数据库文件（`orders.db`）同时管理订单（`orders` 表）与商品库存（`product_stocks` 表）。`sqlite3` 为 Python 标准库内置模块，无需安装额外依赖。
+
+> **安全说明**：`orders.db` 本地数据库文件以及包含密钥的 `.env` 文件已被 `.gitignore` 规则忽略，**严禁提交至 Git 仓库**。在新环境中克隆项目后运行测试或启动服务前，需在本地依次初始化数据表并录入种子数据（推荐使用 `python -m scripts.脚本名` 模块方式运行）：
 
 ```powershell
 # 1. 创建 orders.db 数据库及 orders 数据表
@@ -85,7 +89,13 @@ python -m scripts.init_db
 # 2. 插入初始订单测试数据（支持重复执行幂等更新）
 python -m scripts.seed_orders
 
-# 3. （可选）检查数据库订单数据持久化状态
+# 3. 创建 product_stocks 商品库存数据表
+python -m scripts.init_product_stocks
+
+# 4. 插入初始商品库存测试数据（支持重复执行幂等更新）
+python -m scripts.seed_product_stocks
+
+# 5. （可选）检查数据库订单数据持久化状态
 python -m scripts.verify_orders
 ```
 
@@ -103,7 +113,7 @@ python -m unittest discover -s tests
 - 场景 3：正常无工具请求回归验证
 - 场景 4：正常 Tool Calling 工具执行与回填回归验证（验证 SQLite 订单状态查询）
 - 场景 5：未知工具调用异常处理测试（验证未注册工具防御与友好提示）
-- 场景 6：字典工具结果 JSON 序列化验证（验证商品库存结构化字典序列化回填）
+- 场景 6：字典工具结果 JSON 序列化验证（验证商品库存结构化字典序列化回填与 SQLite 库存查询）
 
 ### 7. 运行 Agent Evaluation
 
